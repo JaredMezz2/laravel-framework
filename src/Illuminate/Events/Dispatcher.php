@@ -624,10 +624,10 @@ class Dispatcher implements DispatcherContract
                 'replicating',
                 'deleting',
                 'forceDeleting',
-            ])) {
+            ], true)) {
                 $payload = array_map(function ($arg) {
                     return $arg instanceof Model
-                        ? $this->snapshotModelForAfterCommit($arg)
+                        ? clone $arg
                         : $arg;
                 }, $payload);
             }
@@ -638,35 +638,6 @@ class Dispatcher implements DispatcherContract
                 }
             );
         };
-    }
-
-    /**
-     * Create a snapshot of the model's state at time of the event, allowing for changes to be viewed
-     * despite model reference being already synced.
-     *
-     * @param  Model  $model
-     * @return Model
-     */
-    protected function snapshotModelForAfterCommit(Model $model): Model
-    {
-        $clone = clone $model;
-
-        // Preserve "new" state at time of event
-        $clone->setRawAttributes($model->getAttributes(), false);
-
-        // Preserve "before" state at time of event (getOriginal())
-        $clone->setOriginalAttributes($model->getOriginal());
-
-        // Preserve changes at event time (getChanges())
-        $clone->setChanges($model->getChanges());
-
-        // Preserve any already-loaded relations
-        $relations = $model->getRelations();
-        if (! empty($relations)) {
-            $clone->setRelations($relations);
-        }
-
-        return $clone;
     }
 
     /**
